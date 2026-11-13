@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kết quả bầu cử Hạ viện Mỹ 2026 – AP</title>
+<style>
+  :root{
+    --bg:#eaf3fc; --card:#fff; --ink:#1a1a1a; --muted:#666;
+    --dem:#3375c4; --rep:#b92532; --tbc:#d9d9d9;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#141a22; --card:#1e252e; --ink:#f1f1f1; --muted:#a7b0ba; --tbc:#4a525c; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5}
+  main{max-width:860px;margin:0 auto;padding:16px}
+  .card{background:var(--card);border-radius:10px;padding:12px;overflow:hidden}
+
+  /* Ảnh + vùng bấm */
+  .stage{position:relative;line-height:0}
+  .stage img{width:100%;height:auto;display:block;border-radius:6px}
+  .hot{position:absolute;top:21%;height:9%;border:0;padding:0;cursor:pointer;
+       background:transparent;border-radius:3px;
+       transition:background .2s, box-shadow .2s}
+  .hot:hover{background:rgba(0,0,0,.08)}
+  .hot:focus-visible{outline:3px solid #000;outline-offset:2px}
+  .hot[aria-pressed="true"]{box-shadow:inset 0 0 0 4px rgba(255,255,255,.9),0 0 0 3px var(--ink)}
+  /* vị trí theo % của ảnh gốc 1560px (chỉnh nếu ảnh của bạn khác) */
+  #dem{left:5.45%;width:40.25%}
+  #tbc{left:45.7%;width:21.15%}
+  #rep{left:66.85%;width:27.4%}
+
+  /* Bảng chi tiết */
+  .panel{margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .box{border-radius:8px;padding:14px;border:2px solid transparent;
+       background:rgba(127,127,127,.08);transition:.2s}
+  .box h3{margin:0 0 2px;font-size:1rem}
+  .box .n{font-size:2.4rem;font-weight:700;line-height:1.1}
+  .box small{color:var(--muted)}
+  .dem .n{color:var(--dem)} .rep .n{color:var(--rep)}
+  .box.selected{border-color:currentColor}
+  .box.dem.selected{border-color:var(--dem)} .box.rep.selected{border-color:var(--rep)}
+  .box.tbc.selected{border-color:var(--muted)}
+  .summary{grid-column:1/-1;font-size:1.05rem;margin:0;padding:12px 14px;
+           border-left:5px solid var(--muted);background:rgba(127,127,127,.08);border-radius:4px}
+  .hint{color:var(--muted);font-size:.9rem;margin:10px 2px 0}
+
+  .source{margin:14px 2px 4px;font-size:.92rem;color:var(--muted);text-align:center}
+  @media (max-width:560px){ .panel{grid-template-columns:1fr} .box .n{font-size:2rem} }
+</style>
+</head>
+<body>
+<main>
+  <div class="card">
+    <div class="stage">
+      <img src="map.png" alt="Bản đồ kết quả bầu cử Hạ viện Mỹ: 224 Dân chủ, 134 Cộng hòa, 77 ghế chưa xác định">
+      <button class="hot" id="dem" aria-pressed="false" aria-label="Chọn Dân chủ"></button>
+      <button class="hot" id="tbc" aria-pressed="false" aria-label="Chọn ghế chưa xác định"></button>
+      <button class="hot" id="rep" aria-pressed="false" aria-label="Chọn Cộng hòa"></button>
+    </div>
+
+    <p class="hint">Bấm vào một màu trên thanh phía trên ảnh (xanh, xám, đỏ) để xem chi tiết và phe còn lại.</p>
+
+    <div class="panel" id="panel" hidden>
+      <div class="box dem" id="b-dem"><h3>Đảng Dân chủ</h3><div class="n">224</div><small id="s-dem"></small></div>
+      <div class="box rep" id="b-rep"><h3>Đảng Cộng hòa</h3><div class="n">134</div><small id="s-rep"></small></div>
+      <div class="box tbc" id="b-tbc"><h3>Chưa xác định</h3><div class="n">77</div><small id="s-tbc"></small></div>
+      <p class="summary" id="summary"></p>
+    </div>
+  </div>
+
+  <p class="source">
+    Nguồn: AP – kết quả bầu cử Hạ viện Mỹ cập nhật đến hiện tại (13/11/2026):
+    Dân chủ 224 · Cộng hòa 134 · còn 77 ghế chưa xác định (cần 218 ghế để giành đa số).
+  </p>
+</main>
+
+<script>
+  const DATA = { dem:224, rep:134, tbc:77, majority:218, total:435 };
+  const NAME = { dem:"Dân chủ", rep:"Cộng hòa", tbc:"Chưa xác định" };
+
+  const $ = id => document.getElementById(id);
+  const pct = n => (n / DATA.total * 100).toFixed(1) + "% tổng số ghế";
+
+  ["dem","rep","tbc"].forEach(k => $("s-"+k).textContent = pct(DATA[k]));
+
+  function show(key){
+    $("panel").hidden = false;
+    ["dem","rep","tbc"].forEach(k=>{
+      $(k).setAttribute("aria-pressed", k===key);
+      $("b-"+k).classList.toggle("selected", k===key);
+    });
+
+    const others = ["dem","rep","tbc"].filter(k=>k!==key);
+    let text;
+    if(key==="dem" || key==="rep"){
+      const have = DATA[key], need = DATA.majority - have;
+      const other = key==="dem" ? "rep" : "dem";
+      text = need <= 0
+        ? `${NAME[key]} có ${have} ghế, đã vượt mốc ${DATA.majority} (hơn ${-need} ghế). `
+        : `${NAME[key]} có ${have} ghế, cần thêm ${need} ghế để đạt ${DATA.majority}. `;
+      text += `Phe còn lại: ${NAME[other]} ${DATA[other]} ghế`;
+      const otherNeed = DATA.majority - DATA[other];
+      if(otherNeed > 0){
+        text += otherNeed > DATA.tbc
+          ? `, dù thắng hết ${DATA.tbc} ghế còn lại cũng chỉ đạt ${DATA[other]+DATA.tbc} (không đủ ${DATA.majority}).`
+          : `, cần thêm ${otherNeed}/${DATA.tbc} ghế chưa xác định để đạt đa số.`;
+      } else text += ".";
+    } else {
+      text = `Còn ${DATA.tbc} ghế chưa xác định. Hiện Dân chủ ${DATA.dem} và Cộng hòa ${DATA.rep}.`;
+    }
+    $("summary").textContent = text;
+  }
+
+  ["dem","rep","tbc"].forEach(k => $(k).addEventListener("click", ()=>show(k)));
+</script>
+</body>
+</html>
